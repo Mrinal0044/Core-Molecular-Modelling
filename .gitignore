@@ -1,0 +1,28 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+auth_token.txt
+
+# Databases & Logs
+*.sqlite3
+*.db
+*.log
+
+# Project specific
+node_modules/
+dist/
+build/
+.DS_Store
+
+# IDEs
+.vscode/
+.idea/
