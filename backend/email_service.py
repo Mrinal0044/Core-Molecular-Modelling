@@ -29,7 +29,7 @@ def send_email(to_email: str, subject: str, body: str, is_html: bool = False):
         else:
             msg.attach(MIMEText(body, 'plain'))
 
-        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=10)
         server.starttls()
         server.login(SMTP_USERNAME, SMTP_PASSWORD)
         server.send_message(msg)

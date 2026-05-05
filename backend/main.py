@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -69,7 +69,7 @@ def signup(req: SignupRequest, db: Session = Depends(get_db)):
 
 
 @app.post("/api/request-otp")
-def request_otp(req: OTPRequestSchema, db: Session = Depends(get_db)):
+def request_otp(req: OTPRequestSchema, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == req.email).first()
     if not user:
         raise HTTPException(status_code=404, detail="Email not found. Please sign up first.")
@@ -88,8 +88,8 @@ def request_otp(req: OTPRequestSchema, db: Session = Depends(get_db)):
     db.add(otp_record)
     db.commit()
     
-    # Send email
-    send_otp_email(user.email, otp_code)
+    # Send email in background
+    background_tasks.add_task(send_otp_email, user.email, otp_code)
     
     # For testing without SMTP, we can return it in the response (remove in production)
     # return {"message": "OTP sent successfully", "test_otp": otp_code}
@@ -126,7 +126,7 @@ def verify_otp(req: OTPVerifySchema, db: Session = Depends(get_db)):
 
 
 @app.post("/api/submit-form")
-def submit_form(req: SubmissionSchema, db: Session = Depends(get_db)):
+def submit_form(req: SubmissionSchema, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == req.email).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -139,14 +139,14 @@ def submit_form(req: SubmissionSchema, db: Session = Depends(get_db)):
     db.add(submission)
     db.commit()
     
-    # Send Notification to Admins
+    # Send Notification to Admins in background
     user_info = {
         "name": user.name,
         "company_name": user.company_name,
         "email": user.email,
         "mobile": user.mobile
     }
-    send_submission_notification(user_info, req.formData)
+    background_tasks.add_task(send_submission_notification, user_info, req.formData)
     
     return {"message": "Pipeline initialized successfully"}
 
