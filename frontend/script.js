@@ -1,4 +1,7 @@
-const API_BASE_URL = 'http://localhost:8000/api';
+// Detect if running on a dev server (like Live Server) or production/FastAPI
+const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && window.location.port !== '8000' 
+    ? 'http://localhost:8000/api' 
+    : '/api';
 
 document.addEventListener('DOMContentLoaded', () => {
     

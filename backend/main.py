@@ -10,6 +10,8 @@ import json
 
 from database import engine, Base, get_db, User, OTPRequest, Submission
 from email_service import send_otp_email, send_submission_notification
+import os
+from fastapi.staticfiles import StaticFiles
 
 app = FastAPI(title="Quantum PharmX Backend")
 
@@ -147,3 +149,8 @@ def submit_form(req: SubmissionSchema, db: Session = Depends(get_db)):
     send_submission_notification(user_info, req.formData)
     
     return {"message": "Pipeline initialized successfully"}
+
+# Mount frontend directory to serve static files (index.html, css, js)
+frontend_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend")
+if os.path.exists(frontend_path):
+    app.mount("/", StaticFiles(directory=frontend_path, html=True), name="frontend")
