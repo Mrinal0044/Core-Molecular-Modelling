@@ -1,42 +1,39 @@
-import smtplib
-import html
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 import os
+import html
+import resend
 from dotenv import load_dotenv
 
 load_dotenv()
 
-SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")
-SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
-SMTP_USERNAME = os.getenv("SMTP_USERNAME")
-SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
+RESEND_API_KEY = os.getenv("RESEND_API_KEY")
+RESEND_FROM_EMAIL = os.getenv("RESEND_FROM_EMAIL", "Quantum PharmX <onboarding@resend.dev>")
+
+if RESEND_API_KEY:
+    resend.api_key = RESEND_API_KEY
 
 def send_email(to_email: str, subject: str, body: str, is_html: bool = False):
-    if not SMTP_USERNAME or not SMTP_PASSWORD:
+    if not RESEND_API_KEY:
         print(f"MOCK EMAIL [To: {to_email}] [Subject: {subject}]")
         print(body)
         return True
         
     try:
-        msg = MIMEMultipart()
-        msg['From'] = SMTP_USERNAME
-        msg['To'] = to_email
-        msg['Subject'] = subject
-
+        params = {
+            "from": RESEND_FROM_EMAIL,
+            "to": to_email,
+            "subject": subject,
+        }
+        
         if is_html:
-            msg.attach(MIMEText(body, 'html'))
+            params["html"] = body
         else:
-            msg.attach(MIMEText(body, 'plain'))
-
-        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=10)
-        server.starttls()
-        server.login(SMTP_USERNAME, SMTP_PASSWORD)
-        server.send_message(msg)
-        server.quit()
+            params["text"] = body
+            
+        response = resend.Emails.send(params)
+        print(f"Email sent successfully to {to_email}: {response}")
         return True
     except Exception as e:
-        print(f"Failed to send email: {e}")
+        print(f"Failed to send email via Resend: {e}")
         return False
 
 def send_otp_email(to_email: str, otp: str):
