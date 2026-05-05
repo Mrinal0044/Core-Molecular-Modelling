@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum PharmX™ - Submission Portal</title>
+    <meta name="description" content="Quantum PharmX™ - Next-generation Quantum AI-driven In-Silico Drug Discovery Suite by MEDxAI Innovations.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <div class="background-elements">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+    </div>
+
+    <div class="container">
+        <header class="header">
+            <div class="logo-container">
+                <div class="logo-icon"></div>
+                <h1>Quantum PharmX<span class="tm">™</span></h1>
+            </div>
+            <p class="subtitle">Next-Generation Quantum AI-driven In-Silico Drug Discovery Suite</p>
+        </header>
+
+        <!-- Auth View: Sign In & Sign Up -->
+        <main id="auth-view" class="form-wrapper">
+            <div class="glass-panel">
+                <!-- Sign In Form -->
+                <form id="signin-form" class="auth-form active">
+                    <h2 class="section-title">Access Portal</h2>
+                    <p class="auth-subtitle">Authenticate via OTP to access the suite.</p>
+                    
+                    <div class="form-group">
+                        <div class="input-wrapper"> <label for="signin-email">Registered Email</label>
+                            <input type="email" id="signin-email" name="email" placeholder="e.g., researcher@company.com" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group" id="otp-group" style="display: none;">
+                        <label for="signin-otp">One-Time Password (OTP)</label>
+                        <input type="text" id="signin-otp" name="otp" placeholder="Enter 6-digit code">
+                        <p class="helper-text">OTP has been sent to your email.</p>
+                    </div>
+
+                    <div class="form-actions" style="margin-top: 2rem;">
+                        <button type="button" id="btn-send-otp" class="submit-btn full-width">
+                            <span class="btn-text">Send OTP</span>
+                            <div class="btn-glow"></div>
+                        </button>
+                        <button type="submit" id="btn-verify-otp" class="submit-btn full-width" style="display: none;">
+                            <span class="btn-text">Verify & Login</span>
+                            <div class="btn-glow"></div>
+                        </button>
+                    </div>
+                    
+                    <div class="auth-switch">
+                        <p>New to Quantum PharmX? <a href="#" id="link-to-signup">Sign Up</a></p>
+                    </div>
+                </form>
+
+                <!-- Sign Up Form -->
+                <form id="signup-form" class="auth-form" style="display: none;">
+                    <h2 class="section-title">Create Account</h2>
+                    
+                    <div class="form-group row">
+                        <div class="input-wrapper half">
+                            <label for="signup-name">Full Name</label>
+                            <input type="text" id="signup-name" name="name" required>
+                        </div>
+                        <div class="input-wrapper half"> <label for="signup-email">Official Email</label>
+                            <input type="email" id="signup-email" name="email" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group row">
+                        <div class="input-wrapper half">
+                            <label for="signup-company">Company Name</label>
+                            <input type="text" id="signup-company" name="company_name" required>
+                        </div>
+                        <div class="input-wrapper half">
+                            <label for="signup-mobile">Mobile Number</label>
+                            <input type="text" id="signup-mobile" name="mobile" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="signup-address">Company's Address</label>
+                        <input type="text" id="signup-address" name="company_address" required>
+                    </div>
+
+                    <div class="form-group row">
+                        <div class="input-wrapper half">
+                            <label for="signup-whatsapp">WhatsApp No. (Optional)</label>
+                            <input type="text" id="signup-whatsapp" name="whatsapp">
+                        </div>
+                        <div class="input-wrapper half">
+                            <label for="signup-source">How did you know about us?</label>
+                            <div class="select-container">
+                                <select id="signup-source" name="source" required>
+                                    <option value="" disabled selected>Select...</option>
+                                    <option value="linkedin">LinkedIn</option>
+                                    <option value="colleague">Colleague / Word of Mouth</option>
+                                    <option value="conference">Conference</option>
+                                    <option value="search">Search Engine</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="submit-btn full-width">
+                            <span class="btn-text">Register Account</span>
+                            <div class="btn-glow"></div>
+                        </button>
+                    </div>
+                    
+                    <div class="auth-switch">
+                        <p>Already registered? <a href="#" id="link-to-signin">Sign In</a></p>
+                    </div>
+                </form>
+            </div>
+        </main>
+
+        <!-- Main Application View (Hidden until authenticated) -->
+        <main id="main-app-view" class="form-wrapper" style="display: none;">
+            <form id="pharmx-form" class="glass-panel">
+                
+                <!-- Header for authenticated user -->
+                <div class="auth-header">
+                    <span id="user-greeting">Welcome, Researcher</span>
+                    <button type="button" id="btn-logout" class="text-btn">Logout</button>
+                </div>
+                
+                <div class="divider"></div>
+
+                <!-- Section 2: Molecular Input -->
+                <section class="form-section">
+    <h2 class="section-title">Molecular Inputs</h2>
+    
+    <div class="form-group">
+        <label for="molecules">Molecule / Ligand names</label>
+        <textarea id="molecules" name="molecules" placeholder="Enter one or more Drug Names or SMILES strings (one per line)..." rows="3" required></textarea>
+    </div>
+    
+    <div class="form-group">
+    <label>Target Proteins</label>
+    <p class="helper-text" style="margin-bottom: 0.5rem; font-size: 0.85rem; opacity: 0.8;">Enter target proteins one by one.</p>
+    
+    <div id="protein-inputs-container">
+        <!-- First Input Row -->
+        <div class="input-wrapper" style="display: flex; gap: 10px; margin-bottom: 10px;">
+            <input type="text" name="targetProteins[]" class="protein-input" placeholder="e.g., PAPR" required style="flex: 1;">
+        </div>
+    </div>
+    
+    <button type="button" id="btn-add-protein" class="text-btn" style="margin-top: 0.5rem; padding-left: 0;">+ Add Another Protein</button>
+    
+    <!-- Summary Container -->
+    <div id="protein-summary-container" style="margin-top: 1rem; display: none; padding: 12px; border-radius: 8px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);">
+        <strong style="color: var(--primary-color, #4facfe); font-size: 0.9rem;">Target Summary:</strong> 
+        <span id="protein-summary-text" style="display: block; margin-top: 5px; font-size: 0.9rem;"></span>
+    </div>
+</div>
+
+
+</section>
+
+                <div class="divider"></div>
+
+                <!-- Section 3: Core Capabilities -->
+                <section class="form-section">
+                    <h2 class="section-title">Core Molecular Modeling</h2>
+                    <div class="grid-checkboxes">
+                        <label class="custom-checkbox card-checkbox">
+                            <input type="checkbox" name="capabilities" value="adme_toxicity" checked>
+                            <div class="card-content">
+                                <h3>ADME & Toxicity</h3>
+                                <p>Integrated profiling</p>
+                            </div>
+                        </label>
+                        <label class="custom-checkbox card-checkbox">
+                            <input type="checkbox" name="capabilities" value="protein_docking">
+                            <div class="card-content">
+                                <h3>Protein-Ligand Docking</h3>
+                                <p>Real-time binding affinity</p>
+                            </div>
+                        </label>
+                        <label class="custom-checkbox card-checkbox">
+                            <input type="checkbox" name="capabilities" value="binding_site">
+                            <div class="card-content">
+                                <h3>Binding Site Detection</h3>
+                                <p>Active pocket highlighting</p>
+                            </div>
+                        </label>
+                        <label class="custom-checkbox card-checkbox">
+                            <input type="checkbox" name="capabilities" value="ic50_curve">
+                            <div class="card-content">
+                                <h3>IC50 & Dose-Response</h3>
+                                <p>Curve generation & modeling</p>
+                            </div>
+                        </label>
+                        <label class="custom-checkbox card-checkbox" id="synergy-card">
+                            <input type="checkbox" name="capabilities" value="synergy_heatmap">
+                            <div class="card-content">
+                                <h3>Multi-Drug Synergy</h3>
+                                <p>Interaction heatmaps</p>
+                            </div>
+                        </label>
+                        <label class="custom-checkbox card-checkbox">
+                            <input type="checkbox" name="capabilities" value="receptor_network">
+                            <div class="card-content">
+                                <h3>Receptor Networks</h3>
+                                <p>Reveal off-target effects</p>
+                            </div>
+                        </label>
+                    </div>
+                </section>
+
+                <div class="divider"></div>
+
+                <!-- Section 4: Advanced Simulations -->
+                <section class="form-section">
+                    <h2 class="section-title">Advanced Simulations (Quantum AI)</h2>
+                    
+                    <div class="form-group row advanced-toggles">
+                        <div class="toggle-wrapper">
+                            <label class="switch">
+                                <input type="checkbox" id="md-simulation" name="simulations" value="md_simulation">
+                                <span class="slider round"></span>
+                            </label>
+                            <span class="toggle-label">Molecular Dynamics (MD)</span>
+                        </div>
+                        <div class="toggle-wrapper">
+                            <label class="switch">
+                                <input type="checkbox" name="simulations" value="mm_pbsa">
+                                <span class="slider round"></span>
+                            </label>
+                            <span class="toggle-label">MM/PBSA Free Energy</span>
+                        </div>
+                        <div class="toggle-wrapper">
+                            <label class="switch">
+                                <input type="checkbox" name="simulations" value="stability_rmsd">
+                                <span class="slider round"></span>
+                            </label>
+                            <span class="toggle-label">Stability (RMSD/RMSF)</span>
+                        </div>
+                        <div class="toggle-wrapper">
+                            <label class="switch">
+                                <input type="checkbox" name="simulations" value="pca_energy">
+                                <span class="slider round"></span>
+                            </label>
+                            <span class="toggle-label">PCA & Energy Landscapes</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Dynamic settings for MD -->
+                    <div id="md-settings" class="form-group hidden-group row">
+                        <div class="input-wrapper third">
+                            <label for="md-duration">Simulation Time (ns)</label>
+                            <input type="number" id="md-duration" name="mdDuration" min="1" max="1000" value="100">
+                        </div>
+                        <div class="input-wrapper third">
+                            <label for="md-temp">Temperature (K)</label>
+                            <input type="number" id="md-temp" name="mdTemp" min="200" max="400" value="300">
+                        </div>
+                        <div class="input-wrapper third">
+                            <label for="md-ensemble">Ensemble</label>
+                            <div class="select-container">
+                                <select id="md-ensemble" name="mdEnsemble">
+                                    <option value="npt">NPT (Isobaric-isothermal)</option>
+                                    <option value="nvt">NVT (Canonical)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="form-actions">
+                    <button type="submit" class="submit-btn">
+                        <span class="btn-text">Initialize Quantum Pipeline</span>
+                        <div class="btn-glow"></div>
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </button>
+                </div>
+            </form>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
