@@ -23,6 +23,7 @@
     <div class="container">
         <header class="header">
             <div class="logo-container">
+                <img src="medxai-logo.png" alt="MEDxAI Logo" style="max-height: 80px; margin-right: 1rem; border-radius: 8px;" id="brand-logo" onerror="this.style.display='none'">
                 <div class="logo-icon"></div>
                 <h1>Quantum PharmX<span class="tm">™</span></h1>
             </div>
@@ -30,8 +31,8 @@
         </header>
 
         <!-- Auth View: Sign In & Sign Up -->
-        <main id="auth-view" class="form-wrapper">
-            <div class="glass-panel">
+        <main id="auth-view" style="display: flex; gap: 2rem; justify-content: center; align-items: stretch; flex-wrap: wrap; max-width: 1100px; margin: 0 auto;">
+            <div class="glass-panel" style="flex: 1; min-width: 320px; max-width: 500px;">
                 <!-- Sign In Form -->
                 <form id="signin-form" class="auth-form active">
                     <h2 class="section-title">Access Portal</h2>
@@ -46,7 +47,7 @@
                     <div class="form-group" id="otp-group" style="display: none;">
                         <label for="signin-otp">One-Time Password (OTP)</label>
                         <input type="text" id="signin-otp" name="otp" placeholder="Enter 6-digit code">
-                        <p class="helper-text">OTP has been sent to your email.</p>
+                        <p class="helper-text">OTP has been sent to your email. <a href="#" id="link-resend-otp" style="color: var(--primary-color, #10b981); display: none; text-decoration: none; margin-left: 5px;">Resend OTP</a><span id="otp-timer" style="color: #ff4757; margin-left: 5px;"></span></p>
                     </div>
 
                     <div class="form-actions" style="margin-top: 2rem;">
@@ -126,6 +127,14 @@
                         <p>Already registered? <a href="#" id="link-to-signin">Sign In</a></p>
                     </div>
                 </form>
+            </div>
+            
+            <!-- LinkedIn Video Embed -->
+            <div class="video-wrapper" style="flex: 1; min-width: 320px; max-width: 504px;">
+                <div class="glass-panel" style="height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem;">
+                    <h3 style="margin-bottom: 1.5rem; color: #fff; font-family: 'Outfit', sans-serif;">See Quantum PharmX in Action</h3>
+                    <iframe src="https://www.linkedin.com/embed/feed/update/urn:li:activity:7454405258937729024" height="600" width="100%" frameborder="0" allowfullscreen="" title="Embedded post" style="border-radius: 8px;"></iframe>
+                </div>
             </div>
         </main>
 

@@ -91,18 +91,51 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnSendOtp = document.getElementById('btn-send-otp');
     const btnVerifyOtp = document.getElementById('btn-verify-otp');
     const otpGroup = document.getElementById('otp-group');
+    const linkResendOtp = document.getElementById('link-resend-otp');
 
-    btnSendOtp.addEventListener('click', async (e) => {
-        e.preventDefault();
+    let otpCooldown = false;
+    let otpTimerInterval = null;
 
-        const email = document.getElementById('signin-email').value;
-        if (!email) {
-            showToast('Please enter your registered email', 'error');
-            return;
+    function startOtpTimer() {
+        const timerSpan = document.getElementById('otp-timer');
+        let timeLeft = 30;
+        otpCooldown = true;
+        
+        if(linkResendOtp) linkResendOtp.style.display = 'none';
+        if(timerSpan) {
+            timerSpan.style.display = 'inline';
+            timerSpan.textContent = `(${timeLeft}s)`;
         }
+        
+        if(otpTimerInterval) clearInterval(otpTimerInterval);
+        
+        otpTimerInterval = setInterval(() => {
+            timeLeft--;
+            if(timerSpan) timerSpan.textContent = `(${timeLeft}s)`;
+            
+            if (timeLeft <= 0) {
+                clearInterval(otpTimerInterval);
+                otpCooldown = false;
+                if(timerSpan) timerSpan.style.display = 'none';
+                if(linkResendOtp) linkResendOtp.style.display = 'inline';
+            }
+        }, 1000);
+    }
 
-        btnSendOtp.querySelector('.btn-text').textContent = 'Sending...';
-        btnSendOtp.style.pointerEvents = 'none';
+    const requestOtp = async (email, isResend = false) => {
+        if (otpCooldown) return;
+
+        const btn = isResend ? linkResendOtp : btnSendOtp;
+        const originalText = isResend ? 'Resend OTP' : 'Send OTP';
+        
+        if (!isResend) {
+            btn.querySelector('.btn-text').textContent = 'Sending...';
+            btn.style.pointerEvents = 'none';
+        } else {
+            btn.textContent = 'Sending...';
+            btn.style.pointerEvents = 'none';
+            btn.style.color = '#94a3b8'; // grey out link
+        }
 
         try {
             const response = await fetch(`${API_BASE_URL}/request-otp`, {
@@ -113,26 +146,54 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = await response.json();
 
             if (response.ok) {
-                showToast('OTP sent to your email!', 'success');
+                showToast(isResend ? 'OTP resent to your email!' : 'OTP sent to your email!', 'success');
                 
-                otpGroup.style.display = 'block'; 
-                btnSendOtp.style.display = 'none';
-                btnVerifyOtp.style.display = 'block'; 
+                if (!isResend) {
+                    otpGroup.style.display = 'block'; 
+                    btnSendOtp.style.display = 'none';
+                    btnVerifyOtp.style.display = 'block'; 
+                    
+                    currentUserEmail = email; 
+                    document.getElementById('signin-otp').setAttribute('required', 'true');
+                    document.getElementById('signin-otp').focus();
+                }
                 
-                currentUserEmail = email; 
-                document.getElementById('signin-otp').setAttribute('required', 'true');
-                document.getElementById('signin-otp').focus();
-
+                startOtpTimer();
             } else {
                 showToast(result.detail || 'Failed to send OTP', 'error');
             }
         } catch (error) {
             showToast('Network error requesting OTP', 'error');
         } finally {
-            btnSendOtp.querySelector('.btn-text').textContent = 'Send OTP';
-            btnSendOtp.style.pointerEvents = 'all';
+            if (!isResend) {
+                btn.querySelector('.btn-text').textContent = originalText;
+                btn.style.pointerEvents = 'all';
+            } else {
+                btn.textContent = originalText;
+                btn.style.pointerEvents = 'all';
+                btn.style.color = ''; // reset link color
+            }
         }
+    };
+
+    btnSendOtp.addEventListener('click', (e) => {
+        e.preventDefault();
+        const email = document.getElementById('signin-email').value;
+        if (!email) {
+            showToast('Please enter your registered email', 'error');
+            return;
+        }
+        requestOtp(email, false);
     });
+
+    if (linkResendOtp) {
+        linkResendOtp.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (currentUserEmail) {
+                requestOtp(currentUserEmail, true);
+            }
+        });
+    }
 
     signinForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -267,15 +328,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = await response.json();
 
             if (response.ok) {
-                submitBtn.querySelector('.btn-text').textContent = 'Pipeline Ready!';
+                submitBtn.querySelector('.btn-text').textContent = 'Sent';
                 submitBtn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+                submitBtn.style.pointerEvents = 'none';
                 showToast('Pipeline initialized! Notifications sent.', 'success');
-                
-                setTimeout(() => {
-                    submitBtn.querySelector('.btn-text').textContent = originalText;
-                    submitBtn.style.background = '';
-                    submitBtn.style.pointerEvents = 'all';
-                }, 3000);
+                // The button intentionally remains in the 'Sent' state and disabled
             } else {
                 showToast(result.detail || 'Submission failed', 'error');
                 submitBtn.querySelector('.btn-text').textContent = originalText;
