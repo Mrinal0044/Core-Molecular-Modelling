@@ -15,6 +15,10 @@ def send_email(to_email: str, subject: str, body: str, is_html: bool = False):
     if not RESEND_API_KEY:
         print(f"MOCK EMAIL [To: {to_email}] [Subject: {subject}]")
         print(body)
+        # Fail if running in production (Render) without an API key
+        if os.environ.get("RENDER"):
+            print("ERROR: RESEND_API_KEY is missing in Render Environment Variables.")
+            return False
         return True
         
     try:

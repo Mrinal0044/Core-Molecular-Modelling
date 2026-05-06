@@ -88,11 +88,15 @@ def request_otp(req: OTPRequestSchema, background_tasks: BackgroundTasks, db: Se
     db.add(otp_record)
     db.commit()
     
-    # Send email in background
-    background_tasks.add_task(send_otp_email, user.email, otp_code)
+    # Send email synchronously to catch errors
+    email_sent = send_otp_email(user.email, otp_code)
     
-    # For testing without SMTP, we can return it in the response (remove in production)
-    # return {"message": "OTP sent successfully", "test_otp": otp_code}
+    if not email_sent:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to send OTP email. Please ensure email service is correctly configured."
+        )
+    
     return {"message": "OTP sent successfully"}
 
 
