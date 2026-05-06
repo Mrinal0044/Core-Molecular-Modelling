@@ -1,43 +1,51 @@
 import os
 import html
-import resend
+import requests
 from dotenv import load_dotenv
 
 load_dotenv()
 
-RESEND_API_KEY = os.getenv("RESEND_API_KEY")
-RESEND_FROM_EMAIL = os.getenv("RESEND_FROM_EMAIL", "Quantum PharmX <onboarding@resend.dev>")
-
-if RESEND_API_KEY:
-    resend.api_key = RESEND_API_KEY
+BREVO_API_KEY = os.getenv("BREVO_API_KEY")
+BREVO_FROM_EMAIL = os.getenv("BREVO_FROM_EMAIL", "info@quantumpharmx.com")
+BREVO_FROM_NAME = os.getenv("BREVO_FROM_NAME", "Quantum PharmX")
 
 def send_email(to_email: str, subject: str, body: str, is_html: bool = False):
-    if not RESEND_API_KEY:
+    if not BREVO_API_KEY:
         print(f"MOCK EMAIL [To: {to_email}] [Subject: {subject}]")
         print(body)
         # Fail if running in production (Render) without an API key
         if os.environ.get("RENDER"):
-            print("ERROR: RESEND_API_KEY is missing in Render Environment Variables.")
+            print("ERROR: BREVO_API_KEY is missing in Render Environment Variables.")
             return False
         return True
         
-    try:
-        params = {
-            "from": RESEND_FROM_EMAIL,
-            "to": to_email,
-            "subject": subject,
-        }
-        
-        if is_html:
-            params["html"] = body
-        else:
-            params["text"] = body
+    url = "https://api.brevo.com/v3/smtp/email"
+    headers = {
+        "accept": "application/json",
+        "api-key": BREVO_API_KEY,
+        "content-type": "application/json"
+    }
+    
+    payload = {
+        "sender": {"name": BREVO_FROM_NAME, "email": BREVO_FROM_EMAIL},
+        "to": [{"email": to_email}],
+        "subject": subject,
+    }
+    
+    if is_html:
+        payload["htmlContent"] = body
+    else:
+        payload["textContent"] = body
             
-        response = resend.Emails.send(params)
-        print(f"Email sent successfully to {to_email}: {response}")
+    try:
+        response = requests.post(url, json=payload, headers=headers)
+        response.raise_for_status()
+        print(f"Email sent successfully to {to_email}: {response.json()}")
         return True
     except Exception as e:
-        print(f"Failed to send email via Resend: {e}")
+        print(f"Failed to send email via Brevo: {e}")
+        if isinstance(e, requests.exceptions.HTTPError):
+            print(f"Response data: {e.response.text}")
         return False
 
 def send_otp_email(to_email: str, otp: str):
