@@ -120,6 +120,7 @@ h1 {
     letter-spacing: -0.02em;
     background: var(--accent-gradient);
     -webkit-background-clip: text;
+    background-clip: text; 
     -webkit-text-fill-color: transparent;
 }
 
@@ -379,13 +380,13 @@ select {
 }
 
 .card-checkbox input:checked ~ .card-content .switch .slider {
-    background-color: var(--accent-color);
-    border-color: var(--accent-color);
+    background-color: var(--accent-color) !important;
+    border-color: var(--accent-color) !important;
 }
 
 .card-checkbox input:checked ~ .card-content .switch .slider:before {
-    transform: translateX(20px);
-    background-color: white;
+    transform: translateX(18px) !important; /* Adjusted slightly for a perfect visual fit */
+    background-color: #ffffff !important;
 }
 
 .card-content h3 {
