@@ -395,12 +395,14 @@ select {
     font-weight: 500;
     margin-bottom: 0;
     transition: var(--transition);
+    pointer-events: none;
 }
 
 .card-content p {
     font-size: 0.8rem;
     color: var(--text-secondary);
     margin-left: calc(37.4px + 0.75rem);
+    pointer-events: none;
 }
 
 /* Switches (Toggles) */
