@@ -278,6 +278,54 @@ document.addEventListener('DOMContentLoaded', () => {
         initialInput.addEventListener('input', updateSummary);
     }
 
+    // --- Dynamic Molecules Logic ---
+    const moleculeContainer = document.getElementById('molecule-inputs-container');
+    const btnAddMolecule = document.getElementById('btn-add-molecule');
+    const moleculeSummaryContainer = document.getElementById('molecule-summary-container');
+    const moleculeSummaryText = document.getElementById('molecule-summary-text');
+
+    const updateMoleculeSummary = () => {
+        const inputs = document.querySelectorAll('.molecule-input');
+        const molecules = Array.from(inputs)
+            .map(input => input.value.trim())
+            .filter(val => val !== '');
+        
+        if (molecules.length > 0) {
+            moleculeSummaryContainer.style.display = 'block';
+            moleculeSummaryText.textContent = molecules.join(', ');
+        } else {
+            moleculeSummaryContainer.style.display = 'none';
+            moleculeSummaryText.textContent = '';
+        }
+    };
+
+    if (btnAddMolecule && moleculeContainer) {
+        btnAddMolecule.addEventListener('click', () => {
+            const row = document.createElement('div');
+            row.className = 'input-wrapper';
+            row.style.cssText = 'display: flex; gap: 10px; margin-bottom: 10px; align-items: center;';
+            
+            row.innerHTML = `
+                <input type="text" name="molecules[]" class="molecule-input" placeholder="e.g., Aspirin" style="flex: 1;">
+                <button type="button" class="text-btn btn-remove" style="color: #ff4757; padding: 0;">Remove</button>
+            `;
+            
+            moleculeContainer.appendChild(row);
+            
+            row.querySelector('.molecule-input').addEventListener('input', updateMoleculeSummary);
+            
+            row.querySelector('.btn-remove').addEventListener('click', (e) => {
+                e.target.parentElement.remove();
+                updateMoleculeSummary();
+            });
+        });
+    }
+
+    const initialMoleculeInput = document.querySelector('.molecule-input');
+    if (initialMoleculeInput) {
+        initialMoleculeInput.addEventListener('input', updateMoleculeSummary);
+    }
+
     // --- MD Simulation Toggle ---
     const mdSimulationToggle = document.getElementById('md-simulation');
     const mdSettingsGroup = document.getElementById('md-settings');
@@ -315,7 +363,10 @@ document.addEventListener('DOMContentLoaded', () => {
         data.capabilities = formData.getAll('capabilities');
         data.simulations = formData.getAll('simulations');
         
-        // Capture all dynamic protein rows into an array
+        // Capture all dynamic rows into arrays
+        data.molecules = formData.getAll('molecules[]');
+        delete data['molecules[]'];
+
         data.targetProteins = formData.getAll('targetProteins[]');
         delete data['targetProteins[]']; // Cleanup the raw string key from Object.fromEntries
 

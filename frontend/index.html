@@ -155,8 +155,23 @@
     <h2 class="section-title">Molecular Inputs</h2>
     
     <div class="form-group">
-        <label for="molecules">Molecule / Ligand names</label>
-        <textarea id="molecules" name="molecules" placeholder="Enter one or more Drug Names or SMILES strings (one per line)..." rows="3" required></textarea>
+    <label>Molecule / Ligand names</label>
+    <p class="helper-text" style="margin-bottom: 0.5rem; font-size: 0.85rem; opacity: 0.8;">Enter molecules or SMILES strings one by one.</p>
+    
+    <div id="molecule-inputs-container">
+        <!-- First Input Row -->
+        <div class="input-wrapper" style="display: flex; gap: 10px; margin-bottom: 10px;">
+            <input type="text" name="molecules[]" class="molecule-input" placeholder="e.g., Aspirin or CC(=O)OC1=CC=CC=C1C(=O)O" required style="flex: 1;">
+        </div>
+    </div>
+    
+    <button type="button" id="btn-add-molecule" class="text-btn" style="margin-top: 0.5rem; padding-left: 0;">+ Add Another Molecule</button>
+    
+    <!-- Summary Container -->
+    <div id="molecule-summary-container" style="margin-top: 1rem; display: none; padding: 12px; border-radius: 8px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);">
+        <strong style="color: var(--primary-color, #4facfe); font-size: 0.9rem;">Molecules Summary:</strong> 
+        <span id="molecule-summary-text" style="display: block; margin-top: 5px; font-size: 0.9rem;"></span>
+    </div>
     </div>
     
     <div class="form-group">
@@ -189,27 +204,63 @@
                     <h2 class="section-title">Core Molecular Modeling</h2>
                     <div class="grid-checkboxes">
                         <label class="custom-checkbox card-checkbox">
-                            <input type="checkbox" name="capabilities" value="adme_toxicity" checked>
+                            <input type="checkbox" name="capabilities" value="molecular_docking">
                             <div class="card-content">
                                 <div class="card-header">
                                     <div class="switch">
                                         <div class="slider round"></div>
                                     </div>
-                                    <h3>ADME & Toxicity</h3>
+                                    <h3>Molecular Docking & Virtual Screening</h3>
                                 </div>
-                                <p>Integrated profiling</p>
+                                <p>High-throughput computational screening to evaluate interactions</p>
                             </div>
                         </label>
                         <label class="custom-checkbox card-checkbox">
-                            <input type="checkbox" name="capabilities" value="protein_docking">
+                            <input type="checkbox" name="capabilities" value="binding_affinity">
                             <div class="card-content">
                                 <div class="card-header">
                                     <div class="switch">
                                         <div class="slider round"></div>
                                     </div>
-                                    <h3>Protein-Ligand Docking</h3>
+                                    <h3>Binding Affinity Prediction</h3>
                                 </div>
-                                <p>Real-time binding affinity</p>
+                                <p>AI-driven prediction of ligand-protein binding strengths</p>
+                            </div>
+                        </label>
+                        <label class="custom-checkbox card-checkbox">
+                            <input type="checkbox" name="capabilities" value="ic50_computation">
+                            <div class="card-content">
+                                <div class="card-header">
+                                    <div class="switch">
+                                        <div class="slider round"></div>
+                                    </div>
+                                    <h3>IC50 Computation</h3>
+                                </div>
+                                <p>Computational estimation to assess inhibitory potency</p>
+                            </div>
+                        </label>
+                        <label class="custom-checkbox card-checkbox">
+                            <input type="checkbox" name="capabilities" value="dose_response">
+                            <div class="card-content">
+                                <div class="card-header">
+                                    <div class="switch">
+                                        <div class="slider round"></div>
+                                    </div>
+                                    <h3>Dose-Response Curve Analysis</h3>
+                                </div>
+                                <p>Generation of dose-response relationships for efficacy</p>
+                            </div>
+                        </label>
+                        <label class="custom-checkbox card-checkbox" id="synergy-card">
+                            <input type="checkbox" name="capabilities" value="synergy_heatmaps">
+                            <div class="card-content">
+                                <div class="card-header">
+                                    <div class="switch">
+                                        <div class="slider round"></div>
+                                    </div>
+                                    <h3>Multi-Drug Synergy Heatmaps</h3>
+                                </div>
+                                <p>Assessment of combinatorial drug effects</p>
                             </div>
                         </label>
                         <label class="custom-checkbox card-checkbox">
@@ -221,31 +272,19 @@
                                     </div>
                                     <h3>Binding Site Detection</h3>
                                 </div>
-                                <p>Active pocket highlighting</p>
+                                <p>Identification of active pockets on protein surfaces</p>
                             </div>
                         </label>
                         <label class="custom-checkbox card-checkbox">
-                            <input type="checkbox" name="capabilities" value="ic50_curve">
+                            <input type="checkbox" name="capabilities" value="dosage_optimization">
                             <div class="card-content">
                                 <div class="card-header">
                                     <div class="switch">
                                         <div class="slider round"></div>
                                     </div>
-                                    <h3>IC50 & Dose-Response</h3>
+                                    <h3>Drug Dosage Optimization</h3>
                                 </div>
-                                <p>Curve generation & modeling</p>
-                            </div>
-                        </label>
-                        <label class="custom-checkbox card-checkbox" id="synergy-card">
-                            <input type="checkbox" name="capabilities" value="synergy_heatmap">
-                            <div class="card-content">
-                                <div class="card-header">
-                                    <div class="switch">
-                                        <div class="slider round"></div>
-                                    </div>
-                                    <h3>Multi-Drug Synergy</h3>
-                                </div>
-                                <p>Interaction heatmaps</p>
+                                <p>Prediction of optimal dosage ranges and therapeutic windows</p>
                             </div>
                         </label>
                         <label class="custom-checkbox card-checkbox">
@@ -255,9 +294,21 @@
                                     <div class="switch">
                                         <div class="slider round"></div>
                                     </div>
-                                    <h3>Receptor Networks</h3>
+                                    <h3>Receptor Interaction Network</h3>
                                 </div>
-                                <p>Reveal off-target effects</p>
+                                <p>Network-based analysis to predict off-target effects</p>
+                            </div>
+                        </label>
+                        <label class="custom-checkbox card-checkbox">
+                            <input type="checkbox" name="capabilities" value="adme_toxicity" checked>
+                            <div class="card-content">
+                                <div class="card-header">
+                                    <div class="switch">
+                                        <div class="slider round"></div>
+                                    </div>
+                                    <h3>ADME & Toxicity Dashboard</h3>
+                                </div>
+                                <p>Comprehensive in silico profiling with risk indicators</p>
                             </div>
                         </label>
                     </div>
