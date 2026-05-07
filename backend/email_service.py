@@ -64,7 +64,7 @@ def send_otp_email(to_email: str, otp: str):
     return send_email(to_email, subject, body, is_html=True)
 
 def send_submission_notification(user_info: dict, submission_data: dict):
-    recipients = ["darryllfonseca@gmail.com"]
+    recipients = ["ceo@medxai-innovations.com", "sheenachristabel.p@vit.ac.in"]
     subject = f"New Quantum PharmX Submission - {user_info.get('company_name', 'Unknown')}"
     
     # Format the submission data nicely with cleaner labels
