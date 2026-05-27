@@ -24,12 +24,71 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 4000);
     }
 
-    // --- Auth View Toggles ---
+    // --- UI Routing & View Controls ---
+    const containerEl = document.querySelector('.container');
+    const landingView = document.getElementById('landing-view');
+    const brandHeader = document.getElementById('brand-header');
     const authView = document.getElementById('auth-view');
     const mainAppView = document.getElementById('main-app-view');
+    
     const signinForm = document.getElementById('signin-form');
     const signupForm = document.getElementById('signup-form');
+
+    // Navigation functions
+    function showLandingPage() {
+        landingView.style.display = 'flex';
+        authView.style.display = 'none';
+        mainAppView.style.display = 'none';
+        brandHeader.style.display = 'none';
+        containerEl.className = 'container';
+    }
+
+    function showAuthPage() {
+        landingView.style.display = 'none';
+        authView.style.display = 'flex';
+        mainAppView.style.display = 'none';
+        brandHeader.style.display = 'block';
+        containerEl.className = 'container auth-active';
+        signinForm.style.display = 'block';
+        signupForm.style.display = 'none';
+    }
+
+    function showMainAppPage(userName) {
+        landingView.style.display = 'none';
+        authView.style.display = 'none';
+        mainAppView.style.display = 'block';
+        brandHeader.style.display = 'none';
+        containerEl.className = 'container app-active';
+        document.getElementById('user-greeting').textContent = `Welcome, ${userName || 'Researcher'}`;
+    }
+
+    // Wiring up landing page CTA buttons
+    document.getElementById('btn-explore').addEventListener('click', showAuthPage);
+    document.getElementById('btn-request-demo').addEventListener('click', showAuthPage);
+
+    // Navbar link controls
+    document.getElementById('nav-home').addEventListener('click', (e) => {
+        e.preventDefault();
+        showLandingPage();
+    });
     
+    // Add brand logo return-to-home functionality
+    document.querySelectorAll('.logo-container').forEach(logo => {
+        logo.addEventListener('click', () => {
+            showLandingPage();
+        });
+        logo.style.cursor = 'pointer';
+    });
+
+    const placeholderNavToast = (e) => {
+        e.preventDefault();
+        showToast('Section coming soon. Explore the platform to access features!', 'success');
+    };
+    document.getElementById('nav-features').addEventListener('click', placeholderNavToast);
+    document.getElementById('nav-about').addEventListener('click', placeholderNavToast);
+    document.getElementById('nav-contact').addEventListener('click', placeholderNavToast);
+
+    // Form switches
     document.getElementById('link-to-signup').addEventListener('click', (e) => {
         e.preventDefault();
         signinForm.style.display = 'none';
@@ -44,13 +103,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('btn-logout').addEventListener('click', () => {
         currentUserEmail = null;
-        mainAppView.style.display = 'none';
-        authView.style.display = 'block';
         signinForm.reset();
         document.getElementById('otp-group').style.display = 'none';
         document.getElementById('btn-verify-otp').style.display = 'none';
         document.getElementById('btn-send-otp').style.display = 'flex';
         showToast('Logged out successfully');
+        showLandingPage();
+    });
+
+    // --- Watch Demo Modal Controller ---
+    const demoModal = document.getElementById('demo-modal');
+    const demoVideoIframe = document.getElementById('demo-video-iframe');
+    const btnWatchDemo = document.getElementById('btn-watch-demo');
+    const btnCloseModal = document.getElementById('btn-close-modal');
+
+    function openDemoModal() {
+        // Embed Google Drive preview with autoplay enabled
+        demoVideoIframe.src = "https://drive.google.com/file/d/1VaZBZGNlN98Ezij-Ndrp01UeAJEcyxuG/preview?autoplay=1";
+        demoModal.classList.add('active');
+    }
+
+    function closeDemoModal() {
+        demoModal.classList.remove('active');
+        // Stop playing by clearing the iframe src
+        demoVideoIframe.src = "";
+    }
+
+    if (btnWatchDemo) btnWatchDemo.addEventListener('click', openDemoModal);
+    if (btnCloseModal) btnCloseModal.addEventListener('click', closeDemoModal);
+    
+    // Close modal if clicked on the overlay background
+    demoModal.addEventListener('click', (e) => {
+        if (e.target === demoModal) {
+            closeDemoModal();
+        }
     });
 
     // --- Signup Logic ---
@@ -216,9 +302,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (response.ok) {
                 showToast('Login successful!', 'success');
-                document.getElementById('user-greeting').textContent = `Welcome, ${result.user.name || 'Researcher'}`;
-                authView.style.display = 'none';
-                mainAppView.style.display = 'block';
+                showMainAppPage(result.user.name);
             } else {
                 showToast(result.detail || 'Invalid OTP', 'error');
             }
