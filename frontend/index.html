@@ -8,7 +8,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/auth.css">
+    <link rel="stylesheet" href="css/form.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
 </head>
 <body>
     <!-- Toast Notification Container -->
@@ -608,6 +613,96 @@
                 </div>
             </form>
         </main>
+
+        <!-- Results View (Hidden until form submission) -->
+        <main id="results-view" class="form-wrapper" style="display: none;">
+            <div class="glass-panel results-dashboard">
+                <div class="auth-header">
+                    <span id="results-greeting" style="font-family: 'Outfit', sans-serif; font-size: 1.5rem; font-weight: 600; background: var(--accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Analysis Results Dashboard</span>
+                    <button type="button" id="btn-back-to-form" class="text-btn" style="border: 1px solid var(--accent-color); padding: 0.5rem 1rem; border-radius: 8px;">Run New Analysis</button>
+                </div>
+                <div class="divider"></div>
+
+                <div class="dashboard-grid">
+                    <!-- Engine Overview -->
+                    <div class="dashboard-card wide">
+                        <h3 class="card-title">Pipeline Execution Summary</h3>
+                        <div class="execution-pipeline">
+                            <div class="pipeline-step success">
+                                <strong>Preparation</strong>
+                                <span>PubChem PUG REST, RDKit, RCSB PDB</span>
+                                <small>Compound Descriptors & Target Structure Generated</small>
+                            </div>
+                            <div class="pipeline-step success">
+                                <strong>Binding Detection</strong>
+                                <span>P2Rank Engine</span>
+                                <small>Binding Sites & Pocket Volumes Identified</small>
+                            </div>
+                            <div class="pipeline-step success">
+                                <strong>Simulation</strong>
+                                <span>AutoDock Vina, GNINA</span>
+                                <small>Molecular Docking Poses Generated</small>
+                            </div>
+                            <div class="pipeline-step processing">
+                                <strong>Parallel Predictions</strong>
+                                <span>DeepPurpose, SwissADME, DrugComb</span>
+                                <small>Affinity, Toxicity & Synergy Analysis</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Molecular Docking & Binding -->
+                    <div class="dashboard-card" id="card-docking">
+                        <h3 class="card-title">Molecular Docking Profile</h3>
+                        <div class="data-row">
+                            <span class="data-label">Top Binding Affinity ($\Delta G$)</span>
+                            <span class="data-value highlight-green" id="res-affinity">-10.4 kcal/mol</span>
+                        </div>
+                        <div class="data-row">
+                            <span class="data-label">Predicted IC50</span>
+                            <span class="data-value" id="res-ic50">14.2 nM</span>
+                        </div>
+                        <div class="data-row">
+                            <span class="data-label">Hydrogen Bonds</span>
+                            <span class="data-value" id="res-hbonds">4</span>
+                        </div>
+                        <div class="data-row">
+                            <span class="data-label">Engine Used</span>
+                            <span class="data-value">AutoDock Vina & GNINA</span>
+                        </div>
+                        <div class="chart-container-small" id="chart-dose-response"></div>
+                    </div>
+
+                    <!-- ADME & Toxicity -->
+                    <div class="dashboard-card" id="card-adme">
+                        <h3 class="card-title">ADME / Toxicity Report</h3>
+                        <ul class="adme-list">
+                            <li><strong>GI Absorption:</strong> <span class="adme-status high">High</span></li>
+                            <li><strong>BBB Permeability:</strong> <span class="adme-status low">Low (Safe)</span></li>
+                            <li><strong>CYP450 Inhibition:</strong> <span class="adme-status moderate">Moderate</span></li>
+                            <li><strong>Hepatotoxicity:</strong> <span class="adme-status safe">Negative</span></li>
+                            <li><strong>Predicted LD50:</strong> <span class="adme-status">1250 mg/kg</span></li>
+                        </ul>
+                        <div class="engine-tag">SwissADME, ProTox-3</div>
+                    </div>
+
+                    <!-- Synergy Heatmap -->
+                    <div class="dashboard-card wide" id="card-synergy">
+                        <h3 class="card-title">Multi-Drug Synergy Heatmap</h3>
+                        <p class="helper-text" style="margin-bottom: 10px;">DrugComb Engine: Interaction matrices across concentration gradients.</p>
+                        <div id="chart-synergy-heatmap" style="width: 100%; height: 350px;"></div>
+                    </div>
+                    
+                    <!-- Interaction Network -->
+                    <div class="dashboard-card wide" id="card-network">
+                        <h3 class="card-title">Receptor Interaction Network</h3>
+                        <p class="helper-text" style="margin-bottom: 10px;">STRING / STITCH API: Target interactome and off-target effect prediction.</p>
+                        <div id="chart-interaction-network" style="width: 100%; height: 350px;"></div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
     </div>
 
     <!-- Watch Demo Video Modal -->
@@ -621,6 +716,6 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script type="module" src="js/main.js"></script>
 </body>
 </html>

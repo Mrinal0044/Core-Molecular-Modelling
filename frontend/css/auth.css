@@ -1,0 +1,68 @@
+/* --- Auth Views & Utility Classes --- */
+.full-width {
+    width: 100%;
+    justify-content: center;
+}
+
+.auth-subtitle {
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+    font-size: 0.95rem;
+}
+
+.auth-switch {
+    margin-top: 1.5rem;
+    text-align: center;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.auth-switch a {
+    color: var(--accent-color);
+    text-decoration: none;
+    font-weight: 500;
+    transition: var(--transition);
+}
+
+.auth-switch a:hover {
+    color: #38bdf8;
+    text-decoration: underline;
+}
+
+.helper-text {
+    font-size: 0.8rem;
+    color: #10b981;
+    margin-top: 0.5rem;
+}
+
+/* Header for Authenticated Form */
+.auth-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#user-greeting {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.25rem;
+    color: var(--accent-color);
+    font-weight: 500;
+}
+
+.text-btn {
+    background: transparent;
+    border: none;
+    color: #ef4444;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 0.9rem;
+    transition: var(--transition);
+}
+
+.text-btn:hover {
+    color: #f87171;
+    text-decoration: underline;
+}
+
+/* Toast Notifications */
