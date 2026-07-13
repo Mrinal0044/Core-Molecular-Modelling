@@ -463,11 +463,28 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = await response.json();
 
             if (response.ok) {
-                submitBtn.querySelector('.btn-text').textContent = 'Sent';
+                submitBtn.querySelector('.btn-text').textContent = 'Processing...';
                 submitBtn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
                 submitBtn.style.pointerEvents = 'none';
-                showToast('Pipeline initialized! Notifications sent.', 'success');
-                // The button intentionally remains in the 'Sent' state and disabled
+                showToast('Pipeline initialized! Polling for results...', 'success');
+                
+                // Poll ALL jobs, not just the first one
+                if (result.job_ids && result.job_ids.length > 0) {
+                    let completedCount = 0;
+                    const totalJobs = result.job_ids.length;
+                    submitBtn.querySelector('.btn-text').textContent = `Processing 0/${totalJobs}...`;
+                    
+                    result.job_ids.forEach((jobId) => {
+                        pollJobStatus(jobId, () => {
+                            completedCount++;
+                            if (completedCount >= totalJobs) {
+                                submitBtn.querySelector('.btn-text').textContent = `Completed (${totalJobs}/${totalJobs})`;
+                            } else {
+                                submitBtn.querySelector('.btn-text').textContent = `Processing ${completedCount}/${totalJobs}...`;
+                            }
+                        });
+                    });
+                }
             } else {
                 showToast(result.detail || 'Submission failed', 'error');
                 submitBtn.querySelector('.btn-text').textContent = originalText;
@@ -479,4 +496,150 @@ document.addEventListener('DOMContentLoaded', () => {
             submitBtn.style.pointerEvents = 'all';
         }
     });
+
+    async function pollJobStatus(jobId, onComplete) {
+        const interval = setInterval(async () => {
+            try {
+                const res = await fetch(`${API_BASE_URL}/job-status/${jobId}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.status === 'Completed' || data.status === 'Failed') {
+                        clearInterval(interval);
+                        
+                        if (data.result_data) {
+                            console.log('Job Result:', data.result_data);
+                            const r = data.result_data;
+                            
+                            // Show the results view
+                            const resultsView = document.getElementById('results-view');
+                            if (resultsView) resultsView.style.display = 'block';
+                            
+                            const container = document.getElementById('results-container');
+                            const card = document.createElement('div');
+                            card.style.cssText = 'background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem;';
+                            
+                            const molLabel = r.molecule || 'Unknown Ligand';
+                            const targetLabel = r.target || 'Unknown Target';
+                            const iupacName = r.pubchem_data?.iupac_name || '';
+                            
+                            let html = `
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div>
+                                        <h4 style="color: #4facfe; margin: 0 0 0.25rem 0; font-size: 1.1rem;">🧬 ${iupacName || molLabel}</h4>
+                                        ${iupacName ? `<span style="font-size: 0.75rem; opacity: 0.5; font-family: monospace;">${molLabel}</span><br>` : ''}
+                                        <span style="font-size: 0.8rem; opacity: 0.6;">Target: <strong style="color: #00f2fe;">${targetLabel}</strong> · Job: ${jobId.substring(0,8)}</span>
+                                    </div>
+                                    <span style="background: ${data.status === 'Completed' ? 'rgba(16,185,129,0.2)' : 'rgba(255,71,87,0.2)'}; color: ${data.status === 'Completed' ? '#10b981' : '#ff4757'}; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;">${data.status}</span>
+                                </div>
+                                
+                                <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">`;
+                            
+                            // RDKit Docking Score
+                            if (r.binding_affinity !== undefined) {
+                                html += `
+                                    <div style="flex: 1; min-width: 150px; background: rgba(16,185,129,0.08); padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid rgba(16,185,129,0.25);">
+                                        <span style="font-size: 0.7rem; opacity: 0.7; display: block; margin-bottom: 4px;">⚡ Docking Score</span>
+                                        <strong style="color: #10b981; font-size: 1.4rem;">${r.binding_affinity}</strong>
+                                        <span style="font-size: 0.75rem; opacity: 0.6;"> kcal/mol</span>
+                                        ${r.scoring_method ? `<div style="font-size: 0.65rem; opacity: 0.4; margin-top: 2px;">${r.scoring_method}</div>` : ''}
+                                    </div>`;
+                            }
+                            
+                            // PubChem Affinity Prediction
+                            if (r.pubchem_affinity !== undefined) {
+                                html += `
+                                    <div style="flex: 1; min-width: 150px; background: rgba(0,242,254,0.08); padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid rgba(0,242,254,0.25);">
+                                        <span style="font-size: 0.7rem; opacity: 0.7; display: block; margin-bottom: 4px;">🔬 PubChem Prediction</span>
+                                        <strong style="color: #00f2fe; font-size: 1.4rem;">${r.pubchem_affinity}</strong>
+                                        <span style="font-size: 0.75rem; opacity: 0.6;"> kcal/mol</span>
+                                    </div>`;
+                            }
+                            
+                            // Confidence
+                            if (r.prediction_confidence !== undefined) {
+                                const pct = Math.round(r.prediction_confidence * 100);
+                                const confColor = pct >= 80 ? '#10b981' : pct >= 50 ? '#f59e0b' : '#ff4757';
+                                html += `
+                                    <div style="flex: 1; min-width: 120px; background: rgba(79,172,254,0.08); padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid rgba(79,172,254,0.25);">
+                                        <span style="font-size: 0.7rem; opacity: 0.7; display: block; margin-bottom: 4px;">📊 Confidence</span>
+                                        <strong style="color: ${confColor}; font-size: 1.4rem;">${pct}%</strong>
+                                    </div>`;
+                            }
+                            
+                            // Drug-likeness badge
+                            if (r.pubchem_data?.druglike !== undefined) {
+                                const isDrug = r.pubchem_data.druglike;
+                                html += `
+                                    <div style="flex: 1; min-width: 120px; background: rgba(${isDrug ? '16,185,129' : '255,71,87'},0.08); padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid rgba(${isDrug ? '16,185,129' : '255,71,87'},0.25);">
+                                        <span style="font-size: 0.7rem; opacity: 0.7; display: block; margin-bottom: 4px;">💊 Drug-Likeness</span>
+                                        <strong style="color: ${isDrug ? '#10b981' : '#ff4757'}; font-size: 1.1rem;">${isDrug ? 'PASS' : 'FAIL'}</strong>
+                                        <div style="font-size: 0.65rem; opacity: 0.5; margin-top: 2px;">Lipinski: ${r.pubchem_data.lipinski_violations || 0} violations</div>
+                                    </div>`;
+                            }
+                            
+                            html += `</div>`;
+                            
+                            // Molecular Properties Row (from PubChem + RDKit)
+                            const desc = r.descriptors || r.pubchem_data;
+                            if (desc) {
+                                html += `
+                                <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; padding: 0.75rem; background: rgba(255,255,255,0.02); border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+                                    <span style="font-size: 0.7rem; opacity: 0.5; width: 100%; margin-bottom: 2px;">Molecular Properties</span>`;
+                                
+                                const props = [
+                                    { label: 'MW', value: desc.molecular_weight, unit: 'g/mol' },
+                                    { label: 'LogP', value: desc.logp, unit: '' },
+                                    { label: 'HBD', value: desc.hbd, unit: '' },
+                                    { label: 'HBA', value: desc.hba, unit: '' },
+                                    { label: 'TPSA', value: desc.tpsa, unit: 'Å²' },
+                                    { label: 'Rot. Bonds', value: desc.rotatable_bonds, unit: '' },
+                                ];
+                                
+                                props.forEach(p => {
+                                    if (p.value !== undefined && p.value !== null) {
+                                        html += `<div style="text-align: center; min-width: 60px;">
+                                            <div style="font-size: 0.65rem; opacity: 0.5;">${p.label}</div>
+                                            <div style="color: #e2e8f0; font-size: 0.9rem; font-weight: 600;">${p.value}</div>
+                                            ${p.unit ? `<div style="font-size: 0.55rem; opacity: 0.4;">${p.unit}</div>` : ''}
+                                        </div>`;
+                                    }
+                                });
+                                html += `</div>`;
+                            }
+                            
+                            // Bioactivity (from PubChem)
+                            if (r.pubchem_data?.total_assays) {
+                                const bio = r.pubchem_data;
+                                html += `
+                                <div style="display: flex; gap: 0.75rem; align-items: center; padding: 0.5rem 0.75rem; background: rgba(255,255,255,0.02); border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+                                    <span style="font-size: 0.7rem; opacity: 0.5;">PubChem Bioactivity:</span>
+                                    <span style="color: #10b981; font-size: 0.85rem; font-weight: 600;">${bio.active_assays} active</span>
+                                    <span style="opacity: 0.4; font-size: 0.8rem;">/ ${bio.total_assays} assays tested</span>
+                                    ${bio.pubchem_cid ? `<a href="https://pubchem.ncbi.nlm.nih.gov/compound/${bio.pubchem_cid}" target="_blank" style="color: #4facfe; font-size: 0.75rem; margin-left: auto; text-decoration: none;">View on PubChem ↗</a>` : ''}
+                                </div>`;
+                            }
+                            
+                            // Error
+                            if (r.error) {
+                                html += `<div style="color: #ff4757; font-size: 0.85rem;">Error: ${r.error}</div>`;
+                            }
+                            
+                            card.innerHTML = html;
+                            if (container) container.appendChild(card);
+                        }
+                        
+                        if (data.status === 'Completed') {
+                            showToast(`Job completed for ${data.result_data?.molecule || 'molecule'}!`, 'success');
+                        } else {
+                            showToast(`Job failed: ${data.result_data?.error || 'unknown error'}`, 'error');
+                        }
+                        
+                        if (onComplete) onComplete();
+                    }
+                }
+            } catch (err) {
+                console.error("Polling error", err);
+            }
+        }, 3000);
+    }
 });

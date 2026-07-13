@@ -64,6 +64,32 @@ class Submission(Base):
     owner = relationship("User", back_populates="submissions")
 
 
+class DockingJob(Base):
+    __tablename__ = "docking_jobs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    job_id = Column(String, unique=True, index=True, nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    status = Column(String, default="Pending") # Pending, Processing, Completed, Failed
+    result_data = Column(Text, nullable=True) # JSON results
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User")
+
+
+class BindingAffinityPrediction(Base):
+    __tablename__ = "binding_predictions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    smiles = Column(String, nullable=False)
+    protein_sequence = Column(Text, nullable=False)
+    affinity_score = Column(String, nullable=True)
+    confidence_score = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User")
+
 # Create tables
 Base.metadata.create_all(bind=engine)
 

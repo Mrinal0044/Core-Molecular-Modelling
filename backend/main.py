@@ -8,8 +8,10 @@ import string
 from datetime import datetime, timedelta
 import json
 
-from backend.database import engine, Base, get_db, User, OTPRequest, Submission
+from backend.database import engine, Base, get_db, User, OTPRequest, Submission, DockingJob
 from backend.email_service import send_otp_email, send_submission_notification
+from backend.app.services.docking import DockingService
+from backend.app.services.prediction import BindingAffinityService
 import os
 from fastapi.staticfiles import StaticFiles
 
@@ -152,7 +154,41 @@ def submit_form(req: SubmissionSchema, background_tasks: BackgroundTasks, db: Se
     }
     background_tasks.add_task(send_submission_notification, user_info, req.formData)
     
-    return {"message": "Pipeline initialized successfully"}
+    # Process molecules and targets
+    molecules = req.formData.get("molecules", [])
+    targets = req.formData.get("targetProteins", [])
+    capabilities = req.formData.get("capabilities", [])
+    
+    # We will submit a job for each combination of molecule and target
+    # In a real app, you might want a single job for a batch, or multiple jobs
+    job_ids = []
+    
+    # We will just take the first target if available, or a default
+    default_target = targets[0] if targets else "1CRN"
+
+    for mol in molecules:
+        if mol.strip() == "": continue
+        # Dispatch docking task
+        job_id = DockingService.submit_job(user.id, default_target, mol)
+        job_ids.append(job_id)
+    
+    return {
+        "message": "Pipeline initialized successfully",
+        "job_ids": job_ids
+    }
+
+
+@app.get("/api/job-status/{job_id}")
+def get_job_status(job_id: str, db: Session = Depends(get_db)):
+    status_data = DockingService.get_job_status(job_id)
+    if not status_data:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    if status_data["result_data"]:
+        # Parse it back to json
+        status_data["result_data"] = json.loads(status_data["result_data"])
+        
+    return status_data
 
 # Mount frontend directory to serve static files (index.html, css, js)
 frontend_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend")
