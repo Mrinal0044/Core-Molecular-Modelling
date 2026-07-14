@@ -113,11 +113,17 @@ def compute_docking_score(sdf_path: str, protein_pdb_path: str) -> dict:
     }
 
 
-def execute_docking_pipeline(job_id: str, protein_name: str, ligand_name: str):
+def execute_docking_pipeline(job_id: str, protein_name: str, ligand_name: str, capabilities: list = None):
     """
     Full docking pipeline using RDKit + PubChem APIs.
     No external CLI tools required.
     """
+    if capabilities is None:
+        capabilities = ["molecular_docking", "binding_affinity"]
+        
+    run_docking = "molecular_docking" in capabilities
+    run_affinity = "binding_affinity" in capabilities
+
     db = SessionLocal()
     job = db.query(DockingJob).filter(DockingJob.job_id == job_id).first()
     if not job:
@@ -142,32 +148,39 @@ def execute_docking_pipeline(job_id: str, protein_name: str, ligand_name: str):
         print(f"[PIPELINE] Step 2/4: Converting file formats with RDKit...")
         ligand_pdb = convert_sdf_to_pdb(ligand_file, output_dir)
 
-        # ── Step 3: Compute docking score using RDKit descriptors (replaces Vina CLI) ──
-        print(f"[PIPELINE] Step 3/4: Computing docking score...")
-        docking_result = compute_docking_score(ligand_file, protein_file)
-
         result_data = {
             "molecule": ligand_name,
             "target": protein_name,
-            "binding_affinity": docking_result["binding_affinity"],
-            "rmsd": docking_result["rmsd"],
-            "scoring_method": docking_result["method"],
         }
-        
-        # Include molecular descriptors if available
-        if "descriptors" in docking_result:
-            result_data["descriptors"] = docking_result["descriptors"]
+
+        # ── Step 3: Compute docking score using RDKit descriptors (replaces Vina CLI) ──
+        if run_docking:
+            print(f"[PIPELINE] Step 3/4: Computing docking score...")
+            docking_result = compute_docking_score(ligand_file, protein_file)
+
+            result_data["binding_affinity"] = docking_result["binding_affinity"]
+            result_data["rmsd"] = docking_result["rmsd"]
+            result_data["scoring_method"] = docking_result["method"]
+            
+            # Include molecular descriptors if available
+            if "descriptors" in docking_result:
+                result_data["descriptors"] = docking_result["descriptors"]
+        else:
+            print(f"[PIPELINE] Step 3/4: Skipping molecular docking as per capabilities...")
 
         # ── Step 4: Binding affinity prediction via PubChem API (replaces DeepPurpose) ──
-        print(f"[PIPELINE] Step 4/4: Querying PubChem for bioactivity data...")
-        try:
-            affinity, confidence, extra = BindingAffinityService.predict(ligand_name, protein_name)
-            result_data["pubchem_affinity"] = affinity
-            result_data["prediction_confidence"] = confidence
-            if extra:
-                result_data["pubchem_data"] = extra
-        except Exception as e:
-            print(f"[PIPELINE] PubChem prediction failed: {e}")
+        if run_affinity:
+            print(f"[PIPELINE] Step 4/4: Querying PubChem for bioactivity data...")
+            try:
+                affinity, confidence, extra = BindingAffinityService.predict(ligand_name, protein_name)
+                result_data["pubchem_affinity"] = affinity
+                result_data["prediction_confidence"] = confidence
+                if extra:
+                    result_data["pubchem_data"] = extra
+            except Exception as e:
+                print(f"[PIPELINE] PubChem prediction failed: {e}")
+        else:
+            print(f"[PIPELINE] Step 4/4: Skipping binding affinity prediction as per capabilities...")
 
         # ── Save results ──
         job.status = "Completed"

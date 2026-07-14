@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 class DockingService:
     @staticmethod
-    def submit_job(user_id: int, protein_name: str, ligand_name: str) -> str:
+    def submit_job(user_id: int, protein_name: str, ligand_name: str, capabilities: list = None) -> str:
         db = SessionLocal()
         try:
             job_id = str(uuid.uuid4())
@@ -24,7 +24,7 @@ class DockingService:
             # Run the pipeline in a background thread (no Redis/Celery needed)
             threading.Thread(
                 target=execute_docking_pipeline,
-                args=(job_id, protein_name, ligand_name),
+                args=(job_id, protein_name, ligand_name, capabilities),
                 daemon=True
             ).start()
 

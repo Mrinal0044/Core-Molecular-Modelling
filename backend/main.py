@@ -169,7 +169,7 @@ def submit_form(req: SubmissionSchema, background_tasks: BackgroundTasks, db: Se
     for mol in molecules:
         if mol.strip() == "": continue
         # Dispatch docking task
-        job_id = DockingService.submit_job(user.id, default_target, mol)
+        job_id = DockingService.submit_job(user.id, default_target, mol, capabilities)
         job_ids.append(job_id)
     
     return {
