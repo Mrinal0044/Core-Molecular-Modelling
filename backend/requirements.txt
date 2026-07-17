@@ -11,3 +11,10 @@ redis
 rdkit
 pubchempy
 DeepPurpose
+admet_ai>=2.0
+numpy
+scipy
+pandas
+matplotlib
+seaborn
+openpyxl

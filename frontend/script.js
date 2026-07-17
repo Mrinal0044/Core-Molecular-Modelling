@@ -497,6 +497,43 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // --- Helper: get or create a group container for a target protein ---
+    function getOrCreateTargetGroup(container, targetLabel) {
+        const groupId = 'target-group-' + targetLabel.replace(/[^a-zA-Z0-9]/g, '_');
+        let group = document.getElementById(groupId);
+        if (!group) {
+            group = document.createElement('div');
+            group.id = groupId;
+            group.style.cssText = 'display: flex; flex-direction: column; gap: 1rem;';
+            
+            const header = document.createElement('div');
+            header.style.cssText = 'display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 0; border-bottom: 1px solid rgba(0,242,254,0.15); margin-top: 0.5rem;';
+            header.innerHTML = `
+                <span style="font-size: 1.4rem;">🎯</span>
+                <div>
+                    <h3 style="color: #00f2fe; margin: 0; font-size: 1.15rem; font-weight: 700;">Target: ${targetLabel}</h3>
+                    <span class="group-counter" style="font-size: 0.72rem; opacity: 0.5;">0 results</span>
+                </div>
+            `;
+            group.appendChild(header);
+            
+            const cardsWrapper = document.createElement('div');
+            cardsWrapper.className = 'target-cards';
+            cardsWrapper.style.cssText = 'display: flex; flex-direction: column; gap: 0.75rem; padding-left: 0.5rem; border-left: 2px solid rgba(0,242,254,0.1);';
+            group.appendChild(cardsWrapper);
+            
+            container.appendChild(group);
+        }
+        return group;
+    }
+    
+    function updateGroupCounter(group) {
+        const cardsWrapper = group.querySelector('.target-cards');
+        const count = cardsWrapper ? cardsWrapper.childElementCount : 0;
+        const counter = group.querySelector('.group-counter');
+        if (counter) counter.textContent = `${count} result${count !== 1 ? 's' : ''}`;
+    }
+
     async function pollJobStatus(jobId, onComplete) {
         const interval = setInterval(async () => {
             try {
@@ -515,11 +552,16 @@ document.addEventListener('DOMContentLoaded', () => {
                             if (resultsView) resultsView.style.display = 'block';
                             
                             const container = document.getElementById('results-container');
+                            
+                            // Get or create the target group
+                            const targetLabel = r.target || 'Unknown Target';
+                            const targetGroup = getOrCreateTargetGroup(container, targetLabel);
+                            const cardsWrapper = targetGroup.querySelector('.target-cards');
+                            
                             const card = document.createElement('div');
                             card.style.cssText = 'background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem;';
                             
                             const molLabel = r.molecule || 'Unknown Ligand';
-                            const targetLabel = r.target || 'Unknown Target';
                             const iupacName = r.pubchem_data?.iupac_name || '';
                             
                             let html = `
@@ -542,6 +584,16 @@ document.addEventListener('DOMContentLoaded', () => {
                                         <strong style="color: #10b981; font-size: 1.4rem;">${r.binding_affinity}</strong>
                                         <span style="font-size: 0.75rem; opacity: 0.6;"> kcal/mol</span>
                                         ${r.scoring_method ? `<div style="font-size: 0.65rem; opacity: 0.4; margin-top: 2px;">${r.scoring_method}</div>` : ''}
+                                    </div>`;
+                            }
+                            
+                            // IC50 Computation
+                            if (r.ic50 !== undefined) {
+                                html += `
+                                    <div style="flex: 1; min-width: 150px; background: rgba(236,72,153,0.08); padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid rgba(236,72,153,0.25);">
+                                        <span style="font-size: 0.7rem; opacity: 0.7; display: block; margin-bottom: 4px;">🔬 IC50 Estimated</span>
+                                        <strong style="color: #ec4899; font-size: 1.4rem;">${r.ic50}</strong>
+                                        <span style="font-size: 0.75rem; opacity: 0.6;"> ${r.ic50_unit}</span>
                                     </div>`;
                             }
                             
@@ -619,13 +671,123 @@ document.addEventListener('DOMContentLoaded', () => {
                                 </div>`;
                             }
                             
+                            // ── ADMET Dashboard ──
+                            if (r.admet_data && !r.admet_data.error) {
+                                const admet = r.admet_data;
+                                const hERG = admet.hERG ? 'Toxic' : 'Safe';
+                                const hERGColor = admet.hERG ? '#ff4757' : '#10b981';
+                                const BBB = admet.BBB_Martins ? 'Permeable' : 'Impermeable';
+                                
+                                html += `
+                                <div style="margin-top: 1rem; background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                                        <h4 style="color: #f8fafc; margin: 0; font-size: 1rem;">ADME & Toxicity Dashboard</h4>
+                                    </div>
+                                    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                                        <div style="flex: 1; min-width: 100px; background: rgba(0,0,0,0.2); padding: 0.75rem; border-radius: 6px; text-align: center;">
+                                            <div style="font-size: 0.65rem; opacity: 0.5;">hERG Toxicity</div>
+                                            <div style="color: ${hERGColor}; font-weight: bold; font-size: 0.9rem;">${hERG}</div>
+                                        </div>
+                                        <div style="flex: 1; min-width: 100px; background: rgba(0,0,0,0.2); padding: 0.75rem; border-radius: 6px; text-align: center;">
+                                            <div style="font-size: 0.65rem; opacity: 0.5;">BBB Permeability</div>
+                                            <div style="color: #4facfe; font-weight: bold; font-size: 0.9rem;">${BBB}</div>
+                                        </div>
+                                        <div style="flex: 1; min-width: 100px; background: rgba(0,0,0,0.2); padding: 0.75rem; border-radius: 6px; text-align: center;">
+                                            <div style="font-size: 0.65rem; opacity: 0.5;">CYP3A4 Substrate</div>
+                                            <div style="color: #e2e8f0; font-weight: bold; font-size: 0.9rem;">${admet.CYP3A4_Substrate_CarbonMangels ? 'Yes' : 'No'}</div>
+                                        </div>
+                                        <div style="flex: 1; min-width: 100px; background: rgba(0,0,0,0.2); padding: 0.75rem; border-radius: 6px; text-align: center;">
+                                            <div style="font-size: 0.65rem; opacity: 0.5;">Ames Mutagenesis</div>
+                                            <div style="color: ${admet.AMES ? '#ff4757' : '#10b981'}; font-weight: bold; font-size: 0.9rem;">${admet.AMES ? 'Mutagenic' : 'Safe'}</div>
+                                        </div>
+                                    </div>
+                                </div>`;
+                            }
+                            
+                            // Dose-Response Curve
+                            if (r.dose_response_base64) {
+                                html += `
+                                <div style="margin-top: 1rem; background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                                        <h4 style="color: #f8fafc; margin: 0; font-size: 1rem;">Dose-Response Curve</h4>
+                                    </div>
+                                    <div style="border-radius: 6px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+                                        <img src="data:image/png;base64,${r.dose_response_base64}" style="width: 100%; display: block;" alt="Dose-Response Curve" />
+                                    </div>
+                                </div>`;
+                            }
+                            
+                            // Synergy Heatmap + Metadata
+                            if (r.synergy_heatmap_base64) {
+                                const sm = r.synergy_meta || {};
+                                const isSynergxDB = sm.source === 'SYNERGxDB';
+                                
+                                html += `
+                                <div style="margin-top: 1rem; background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                                        <h4 style="color: #f8fafc; margin: 0; font-size: 1rem;">Drug Combination Synergy Analysis</h4>
+                                        <span style="background: ${isSynergxDB ? 'rgba(124,58,237,0.2)' : 'rgba(245,158,11,0.2)'}; color: ${isSynergxDB ? '#a78bfa' : '#f59e0b'}; padding: 3px 10px; border-radius: 12px; font-size: 0.65rem; font-weight: 600;">
+                                            ${sm.source || 'Computed'}
+                                        </span>
+                                    </div>`;
+
+                                // Show synergy metadata if available
+                                if (sm.drug_name || sm.partner_drug) {
+                                    html += `
+                                    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.75rem; padding: 0.6rem 0.75rem; background: rgba(124,58,237,0.06); border-radius: 6px; border: 1px solid rgba(124,58,237,0.12);">
+                                        <div style="flex: 1; min-width: 120px;">
+                                            <div style="font-size: 0.6rem; opacity: 0.5; text-transform: uppercase; letter-spacing: 0.5px;">Combination</div>
+                                            <div style="color: #e2e8f0; font-size: 0.85rem; font-weight: 600; margin-top: 2px;">${sm.drug_name || '—'} + ${sm.partner_drug || '—'}</div>
+                                        </div>`;
+                                    
+                                    if (sm.cell_line) {
+                                        html += `
+                                        <div style="min-width: 80px;">
+                                            <div style="font-size: 0.6rem; opacity: 0.5; text-transform: uppercase; letter-spacing: 0.5px;">Cell Line</div>
+                                            <div style="color: #e2e8f0; font-size: 0.85rem; font-weight: 600; margin-top: 2px;">${sm.cell_line}</div>
+                                        </div>`;
+                                    }
+                                    if (sm.tissue) {
+                                        html += `
+                                        <div style="min-width: 80px;">
+                                            <div style="font-size: 0.6rem; opacity: 0.5; text-transform: uppercase; letter-spacing: 0.5px;">Tissue</div>
+                                            <div style="color: #e2e8f0; font-size: 0.85rem; font-weight: 600; margin-top: 2px; text-transform: capitalize;">${sm.tissue}</div>
+                                        </div>`;
+                                    }
+                                    if (sm.bliss_score !== undefined && sm.bliss_score !== null) {
+                                        html += `
+                                        <div style="min-width: 60px; text-align: center;">
+                                            <div style="font-size: 0.6rem; opacity: 0.5; text-transform: uppercase; letter-spacing: 0.5px;">Bliss</div>
+                                            <div style="color: #a78bfa; font-size: 0.85rem; font-weight: 700; margin-top: 2px;">${Number(sm.bliss_score).toFixed(2)}</div>
+                                        </div>`;
+                                    }
+                                    if (sm.zip_score !== undefined && sm.zip_score !== null) {
+                                        html += `
+                                        <div style="min-width: 60px; text-align: center;">
+                                            <div style="font-size: 0.6rem; opacity: 0.5; text-transform: uppercase; letter-spacing: 0.5px;">ZIP</div>
+                                            <div style="color: #a78bfa; font-size: 0.85rem; font-weight: 700; margin-top: 2px;">${Number(sm.zip_score).toFixed(2)}</div>
+                                        </div>`;
+                                    }
+                                    html += `</div>`;
+                                }
+
+                                html += `
+                                    <div style="text-align: center;">
+                                        <img src="data:image/png;base64,${r.synergy_heatmap_base64}" style="max-width: 100%; height: auto; border-radius: 4px;" alt="Synergy Heatmap" />
+                                    </div>
+                                </div>`;
+                            }
+                            
                             // Error
                             if (r.error) {
                                 html += `<div style="color: #ff4757; font-size: 0.85rem;">Error: ${r.error}</div>`;
                             }
                             
                             card.innerHTML = html;
-                            if (container) container.appendChild(card);
+                            if (cardsWrapper) {
+                                cardsWrapper.appendChild(card);
+                                updateGroupCounter(targetGroup);
+                            }
                         }
                         
                         if (data.status === 'Completed') {
@@ -642,4 +804,4 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }, 3000);
     }
-});
+});

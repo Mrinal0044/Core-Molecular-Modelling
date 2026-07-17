@@ -159,18 +159,27 @@ def submit_form(req: SubmissionSchema, background_tasks: BackgroundTasks, db: Se
     targets = req.formData.get("targetProteins", [])
     capabilities = req.formData.get("capabilities", [])
     
-    # We will submit a job for each combination of molecule and target
-    # In a real app, you might want a single job for a batch, or multiple jobs
+    # Submit a job for each combination of molecule × target protein
     job_ids = []
     
-    # We will just take the first target if available, or a default
-    default_target = targets[0] if targets else "1CRN"
+    if not targets:
+        targets = ["1CRN"]  # default target if none provided
 
-    for mol in molecules:
-        if mol.strip() == "": continue
-        # Dispatch docking task
-        job_id = DockingService.submit_job(user.id, default_target, mol, capabilities)
-        job_ids.append(job_id)
+    for i, mol in enumerate(molecules):
+        mol_str = mol.strip()
+        if not mol_str:
+            continue
+            
+        partner_mol = None
+        if len(molecules) > 1:
+            partner_idx = (i + 1) % len(molecules)
+            partner_mol = molecules[partner_idx].strip()
+
+        for target in targets:
+            if target.strip() == "":
+                continue
+            job_id = DockingService.submit_job(user.id, target.strip(), mol_str, capabilities, partner_ligand_name=partner_mol)
+            job_ids.append(job_id)
     
     return {
         "message": "Pipeline initialized successfully",
